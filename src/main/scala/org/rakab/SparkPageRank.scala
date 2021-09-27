@@ -25,7 +25,7 @@ object SparkPageRank {
     val spark = SparkSession
       .builder()
       .appName("Spark Page Rank")
-      .config("spark.master", "local")
+      .config("spark.local.dir", "/mnt/data/tmp/")
       .getOrCreate()
 
     // Take paths from the user as command line arguments
@@ -70,9 +70,6 @@ object SparkPageRank {
     // Dataset to keep track of urls and their corresponding ranks. Initialise the rank of each url to 1
     var ranks = linksList.map[(String, Double)]((row: Row) => (row.getString(0), 1.toDouble))
 
-//    linksList.show()
-//    ranks.show()
-
     //Time the for loop
     val t1 = System.nanoTime()
 
@@ -93,11 +90,9 @@ object SparkPageRank {
       ranks = updatedRanks
     }
 
-//    ranks.show()
     log.info(s"Creating final ranks of all left side articles")
 
     var finalRanks = linksList.join(ranks, Seq("_1"), "left_outer").drop("links")
-//    finalRanks.show()
 
     log.info(s"Writing to output $outputPath")
 
