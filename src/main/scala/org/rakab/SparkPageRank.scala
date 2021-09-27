@@ -31,12 +31,11 @@ object SparkPageRank {
     // Take paths from the user as command line arguments
     val inputPath = args(0)
     val outputPath = args(1)
+    val persistData = "true".equals(args(2).toLowerCase)
+    val partitionByCol: String = args(3)
+    val partitionByNum: Int = args(4).toInt
 
     var iterations = 10
-
-    if(args.length >= 3) {
-      iterations = args(2).toInt
-    }
 
     log.info(s"Loaded config inputPath->$inputPath, outputPath->$outputPath")
     log.info(s"Total iterations = $iterations")
