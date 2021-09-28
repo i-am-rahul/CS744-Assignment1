@@ -9,8 +9,9 @@
 package org.rakab
 
 import org.apache.log4j.{Level, LogManager}
-import org.apache.spark.sql.functions.collect_list
+import org.apache.spark.sql.functions.{col, collect_list}
 import org.apache.spark.sql.{Encoders, Row, SaveMode, SparkSession}
+import org.apache.spark.storage.StorageLevel
 
 object SparkPageRank {
 
@@ -37,7 +38,9 @@ object SparkPageRank {
 
     var iterations = 10
 
-    log.info(s"Loaded config inputPath->$inputPath, outputPath->$outputPath")
+    log.info(s"Loaded config inputPath->$inputPath, outputPath->$outputPath, persistData->$persistData, " +
+      s"partitionByCol->$partitionByCol, partitionByNum->$partitionByNum")
+
     log.info(s"Total iterations = $iterations")
 
     import spark.implicits._
@@ -54,20 +57,34 @@ object SparkPageRank {
       }) // Trim any whitespaces before or after the values
       .map(r => (r.getString(0).toLowerCase().trim, r.getString(1).toLowerCase().trim))
       .filter(r => r._2.contains("category:") || !r._2.contains(":"))
-      .toDF("_1", "_2")
+      .toDF("fromNode", "toNode")
 
     log.info("Creating links")
 
     // Dataset that maintains each url and its list of outgoing links
     val linksList = df
       .dropDuplicates()
-      .groupBy("_1")
-      .agg(collect_list("_2") as "links")
+      .groupBy("fromNode")
+      .agg(collect_list("toNode") as "links")
+      .toDF("node", "links")
+
+    if(persistData)
+      linksList.persist(StorageLevel.MEMORY_ONLY)   // Cache data to MEMORY
+
+    // Create partitioning by fromNode and toNode columns
+    if(partitionByNum == -1)
+      linksList.repartition(col(partitionByCol))
+    else
+      linksList.repartition(partitionByNum)
 
     log.info("Creating initial ranks")
 
     // Dataset to keep track of urls and their corresponding ranks. Initialise the rank of each url to 1
-    var ranks = linksList.map[(String, Double)]((row: Row) => (row.getString(0), 1.toDouble))
+    var ranks = linksList
+      .map[(String, Double)]((row: Row) => (row.getString(0), 1.toDouble))
+      .toDF("node", "rank")
+
+    ranks.repartition(col("node"))
 
     //Time the for loop
     val t1 = System.nanoTime()
@@ -75,9 +92,9 @@ object SparkPageRank {
     log.info("Starting iterations")
 
     for(i <- 1 to iterations) {
-      log.info(s"Creating intmRanks ${i}")
+      log.info(s"Creating intermediate ranks ${i}")
       var updatedRanks = linksList
-        .join(ranks, "_1")
+        .join(ranks, "node")
         .flatMap(row => {
           val sz = row.getSeq(1).length
           row.getSeq[String](1).map(link => (link, row.getDouble(2) / sz)) ++ Seq[(String, Double)]((row.getString(0), 0))
@@ -85,13 +102,15 @@ object SparkPageRank {
         .groupBy($"_1")
         .sum("_2")
         .map(row => (row.getString(0), 0.15 + 0.85 * row.getDouble(1)))
+        .toDF("node", "rank")
 
       ranks = updatedRanks
+      ranks.repartition(col("node"))
     }
 
     log.info(s"Creating final ranks of all left side articles")
 
-    var finalRanks = linksList.join(ranks, Seq("_1"), "left_outer").drop("links")
+    var finalRanks = linksList.join(ranks, Seq("node"), "left_outer").drop("links")
 
     log.info(s"Writing to output $outputPath")
 
