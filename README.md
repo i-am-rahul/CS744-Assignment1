@@ -60,6 +60,18 @@ Now we look at the two main tasks of the assignment.
 
 ## Sort (Part 2)
 
+In order to run the Sorting application, we must first create the project jar and submit it to `run.sh`. The steps are:
+1. Clone this repository.
+2. Package it using [sbt](https://alvinalexander.com/scala/sbt-how-to-compile-run-package-scala-project/).
+3. Copy the jar file generated to your home directory.
+4. Submit the jar file and the app class name(org.rakab.Sorting) to run.sh along with the input and output file paths.
+5. Enjoy.
+```shell
+nohup ./run.sh <clusterHeadNodeUrl> pagerank_2.12-0.1.jar org.rakab.Sorting <inputHdfsPath> <outputHdfsPath> - - -1 &
+Example:
+nohup ./run.sh c220g2-010607vm-1.wisc.cloudlab.us pagerank_2.12-0.1.jar org.rakab.Sorting "hdfs://10.10.1.1:9000/data/task1/input/" "hdfs://10.10.1.1:9000/data/task1/output/" - - -1 &
+```
+
 ## PageRank (Part 3)
 
 In order to run the PageRank application, we must first create the project jar and submit it to `run.sh`. The steps are:
@@ -73,32 +85,44 @@ The different configurations we report are:
 #### No persistence and no partitioning
 (For this case, we remove all explicit persistence and partitioning code from our SparkPageRank.scala file and generate a pagerank_vanilla_2.12-0.1.jar jar)
 ```shell
+nohup ./run.sh <clusterHeadNodeUrl> pagerank_vanilla_2.12-0.1.jar org.rakab.SparkPageRank <inputHdfsPath> <outputHdfsPath> "false" "node" -1 &
+Example:
 nohup ./run.sh c220g2-010607vm-1.wisc.cloudlab.us pagerank_vanilla_2.12-0.1.jar org.rakab.SparkPageRank "hdfs://10.10.1.1:9000/data/task2/enwiki-pages-articles/" "hdfs://10.10.1.1:9000/data/task2/output2/" "false" "node" -1 &
 ```
 
 #### No persistence but with partitioning on column 'node' of linksList dataframe
 ```shell
+nohup ./run.sh <clusterHeadNodeUrl> pagerank_2.12-0.1.jar org.rakab.SparkPageRank <inputHdfsPath> <outputHdfsPath> "false" "node" -1 &
+Example:
 nohup ./run.sh c220g2-010607vm-1.wisc.cloudlab.us pagerank_2.12-0.1.jar org.rakab.SparkPageRank "hdfs://10.10.1.1:9000/data/task2/enwiki-pages-articles/" "hdfs://10.10.1.1:9000/data/task2/output2/" "false" "node" -1 &
 ```
 
 #### No persistence but with partitioning of linksList dataframe into 200 partitions
 ```shell
+nohup ./run.sh <clusterHeadNodeUrl> pagerank_2.12-0.1.jar org.rakab.SparkPageRank <inputHdfsPath> <outputHdfsPath> "false" "node" 200 &
+Example:
 nohup ./run.sh c220g2-010607vm-1.wisc.cloudlab.us pagerank_2.12-0.1.jar org.rakab.SparkPageRank "hdfs://10.10.1.1:9000/data/task2/enwiki-pages-articles/" "hdfs://10.10.1.1:9000/data/task2/output2/" "false" "node" 200 &
 ```
 
 #### With persistence and partitioning of linksList dataframe into 100 partitions
 ```shell
+nohup ./run.sh <clusterHeadNodeUrl> pagerank_2.12-0.1.jar org.rakab.SparkPageRank <inputHdfsPath> <outputHdfsPath> "true" "node" 100 &
+Example:
 nohup ./run.sh c220g2-010607vm-1.wisc.cloudlab.us pagerank_2.12-0.1.jar org.rakab.SparkPageRank "hdfs://10.10.1.1:9000/data/task2/enwiki-pages-articles/" "hdfs://10.10.1.1:9000/data/task2/output2/" "true" "node" 100 &
 ```
 
 #### With persistence and partitioning of linksList dataframe into 200 partitions
 ```shell
+nohup ./run.sh <clusterHeadNodeUrl> pagerank_2.12-0.1.jar org.rakab.SparkPageRank <inputHdfsPath> <outputHdfsPath> "true" "node" 200 &
+Example:
 nohup ./run.sh c220g2-010607vm-1.wisc.cloudlab.us pagerank_2.12-0.1.jar org.rakab.SparkPageRank "hdfs://10.10.1.1:9000/data/task2/enwiki-pages-articles/" "hdfs://10.10.1.1:9000/data/task2/output2/" "true" "node" 200 &
 ```
 
 #### With persistence and partitioning of linksList dataframe into 200 partitions, and killing a worker at 25% progress of job
 On node 0:
 ```shell
+nohup ./run.sh <clusterHeadNodeUrl> pagerank_2.12-0.1.jar org.rakab.SparkPageRank <inputHdfsPath> <outputHdfsPath> "true" "node" 200 &
+Example:
 nohup ./run.sh c220g2-010607vm-1.wisc.cloudlab.us pagerank_2.12-0.1.jar org.rakab.SparkPageRank "hdfs://10.10.1.1:9000/data/task2/enwiki-pages-articles/" "hdfs://10.10.1.1:9000/data/task2/output2/" "true" "node" 200 &
 ```
 
@@ -111,6 +135,8 @@ kill -9 <spark_worker_pid>
 #### With persistence and partitioning of linksList dataframe into 200 partitions, and killing a worker at 75% progress of job
 On node 0:
 ```shell
+nohup ./run.sh <clusterHeadNodeUrl> pagerank_2.12-0.1.jar org.rakab.SparkPageRank <inputHdfsPath> <outputHdfsPath> "true" "node" 200 &
+Example:
 nohup ./run.sh c220g2-010607vm-1.wisc.cloudlab.us pagerank_2.12-0.1.jar org.rakab.SparkPageRank "hdfs://10.10.1.1:9000/data/task2/enwiki-pages-articles/" "hdfs://10.10.1.1:9000/data/task2/output2/" "true" "node" 200 &
 ```
 
